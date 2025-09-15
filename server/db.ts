@@ -5,11 +5,19 @@ import * as schema from "@shared/schema";
 
 neonConfig.webSocketConstructor = ws;
 
-if (!process.env.DATABASE_URL) {
+// Force use of NEON_DATABASE_URL to ensure we connect to the correct database
+const databaseUrl = process.env.NEON_DATABASE_URL;
+
+if (!databaseUrl) {
   throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+    "NEON_DATABASE_URL must be set. Please configure your Neon database connection.",
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Log which database we're connecting to (for debugging)
+console.log(`🔗 Connecting to database: Neon PostgreSQL`);
+const hostname = databaseUrl.match(/@([^/]+)/)?.[1] || 'unknown';
+console.log(`🔗 Database host: ${hostname}`);
+
+export const pool = new Pool({ connectionString: databaseUrl });
 export const db = drizzle({ client: pool, schema });

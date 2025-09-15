@@ -39,7 +39,7 @@ export default function EmailForm({ onEmailSent, video }: EmailFormProps) {
       const response = await fetch("/api/request-access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, videoId: video.id }),
       });
       
       if (!response.ok) {

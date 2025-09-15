@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import VideoThumbnail from "@/components/video-thumbnail";
 import EmailForm from "@/components/email-form";
 import EmailSentModal from "@/components/email-sent-modal";
-import { Shield, Lock, CheckCircle, GraduationCap, Tag } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Shield, Lock, CheckCircle, LogIn } from "lucide-react";
 
 interface Video {
   id: string;
@@ -17,20 +19,43 @@ interface Video {
 export default function Home() {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [videoId, setVideoId] = useState<string | null>(null);
+  const emailFormRef = useRef<HTMLDivElement>(null);
 
-  // Fetch the active video
+  // Get video ID from URL parameters, default to specific video if none provided
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const videoParam = urlParams.get('video');
+    // Set default video ID if no video parameter is provided
+    setVideoId(videoParam || '0f7e5417-33c0-4764-a8fb-4a49a193861c');
+  }, []);
+
+  // Fetch specific video by ID
   const { data: video, isLoading } = useQuery<Video>({
-    queryKey: ["/api/seed"],
+    queryKey: ["/api/videos", videoId],
     queryFn: async () => {
-      const response = await fetch("/api/seed", { method: "POST" });
-      const data = await response.json();
-      return data.video;
+      if (!videoId) return null;
+      // Fetch specific video by ID
+      const response = await fetch(`/api/videos/${videoId}`);
+      if (!response.ok) {
+        throw new Error('Video not found');
+      }
+      return response.json();
     },
+    enabled: !!videoId,
+    retry: false,
   });
 
   const handleEmailSent = (email: string) => {
     setUserEmail(email);
     setShowEmailModal(true);
+  };
+
+  const scrollToEmailForm = () => {
+    emailFormRef.current?.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'center'
+    });
   };
 
   if (isLoading) {
@@ -83,7 +108,7 @@ export default function Home() {
           {/* Video Section - Moved to Top */}
           <div className="mb-12">
             <div className="max-w-2xl mx-auto">
-              <VideoThumbnail video={video} />
+              <VideoThumbnail video={video} onClick={scrollToEmailForm} />
               
               {/* Video Details */}
               <div className="mt-6 text-center">
@@ -93,22 +118,12 @@ export default function Home() {
                 <p className="text-muted-foreground mb-4" data-testid="text-video-description">
                   {video.description}
                 </p>
-                <div className="flex items-center justify-center space-x-6 text-sm text-muted-foreground">
-                  <div className="flex items-center space-x-1">
-                    <GraduationCap className="h-4 w-4" />
-                    <span>Training Required</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Tag className="h-4 w-4" />
-                    <span>Certification Available</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
 
           {/* Email Access Form - Centered */}
-          <div className="max-w-md mx-auto">
+          <div className="max-w-md mx-auto" ref={emailFormRef}>
             <EmailForm onEmailSent={handleEmailSent} video={video} />
           </div>
         </div>
@@ -144,6 +159,12 @@ function Header() {
               <Lock className="h-3 w-3" />
               <span>Secure Access</span>
             </div>
+            <Link href="/admin/login">
+              <Button variant="outline" size="sm" data-testid="button-admin-login">
+                <LogIn className="h-4 w-4 mr-2" />
+                Admin Login
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
