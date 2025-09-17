@@ -129,6 +129,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get access log details by ID for completion page
+  app.get("/api/access-logs/:accessLogId", async (req: Request, res: Response) => {
+    try {
+      const { accessLogId } = req.params;
+      
+      const accessLog = await storage.getAccessLogById(accessLogId);
+      if (!accessLog) {
+        return res.status(404).json({ message: "Access log not found" });
+      }
+
+      res.json(accessLog);
+
+    } catch (error) {
+      console.error("Get access log error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Update viewing progress
   app.patch("/api/access/:accessLogId/progress", async (req: Request, res: Response) => {
     try {
