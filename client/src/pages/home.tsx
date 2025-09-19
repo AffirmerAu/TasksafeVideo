@@ -1,11 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import VideoThumbnail from "@/components/video-thumbnail";
-import EmailForm from "@/components/email-form";
-import EmailSentModal from "@/components/email-sent-modal";
 import { Button } from "@/components/ui/button";
-import { Shield, Lock, CheckCircle, LogIn } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Shield, Lock, LogIn, Clock, Tag, Play, BookOpen } from "lucide-react";
 
 interface Video {
   id: string;
@@ -17,60 +15,51 @@ interface Video {
 }
 
 export default function Home() {
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [userEmail, setUserEmail] = useState("");
-  const [videoId, setVideoId] = useState<string | null>(null);
-  const emailFormRef = useRef<HTMLDivElement>(null);
-
-  // Get video ID from URL parameters, default to specific video if none provided
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const videoParam = urlParams.get('video');
-    // Set default video ID if no video parameter is provided
-    setVideoId(videoParam || '0f7e5417-33c0-4764-a8fb-4a49a193861c');
-  }, []);
-
-  // Fetch specific video by ID
-  const { data: video, isLoading } = useQuery<Video>({
-    queryKey: ["/api/videos", videoId],
+  // Fetch all available videos
+  const { data: videosRaw, isLoading, error } = useQuery<Video[]>({
+    queryKey: ["/api/videos"],
     queryFn: async () => {
-      if (!videoId) return null;
-      // Fetch specific video by ID
-      const response = await fetch(`/api/videos/${videoId}`);
+      const response = await fetch('/api/videos');
       if (!response.ok) {
-        throw new Error('Video not found');
+        throw new Error('Failed to fetch videos');
       }
       return response.json();
     },
-    enabled: !!videoId,
     retry: false,
   });
 
-  const handleEmailSent = (email: string) => {
-    setUserEmail(email);
-    setShowEmailModal(true);
-  };
-
-  const scrollToEmailForm = () => {
-    emailFormRef.current?.scrollIntoView({ 
-      behavior: 'smooth',
-      block: 'center'
-    });
-  };
+  // Reorder videos to prioritize "Safe Use of Aircraft Wheel Chocks and Safety Cones"
+  const videos = videosRaw ? [...videosRaw].sort((a, b) => {
+    // Move aircraft chocks video to the top
+    if (a.title.toLowerCase().includes('aircraft') && a.title.toLowerCase().includes('chocks')) {
+      return -1;
+    }
+    if (b.title.toLowerCase().includes('aircraft') && b.title.toLowerCase().includes('chocks')) {
+      return 1;
+    }
+    // Keep original order for other videos
+    return 0;
+  }) : undefined;
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="max-w-4xl mx-auto">
-            <div className="animate-pulse">
-              <div className="h-8 bg-muted rounded w-1/2 mx-auto mb-4"></div>
-              <div className="h-4 bg-muted rounded w-3/4 mx-auto mb-12"></div>
-              <div className="grid lg:grid-cols-2 gap-12">
-                <div className="h-80 bg-muted rounded-xl"></div>
-                <div className="h-80 bg-muted rounded-xl"></div>
-              </div>
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <div className="h-10 bg-muted rounded w-1/2 mx-auto mb-4 animate-pulse"></div>
+              <div className="h-6 bg-muted rounded w-3/4 mx-auto animate-pulse"></div>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-48 bg-muted rounded-xl mb-4"></div>
+                  <div className="h-6 bg-muted rounded mb-2"></div>
+                  <div className="h-4 bg-muted rounded w-3/4 mb-4"></div>
+                  <div className="h-10 bg-muted rounded"></div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -78,15 +67,15 @@ export default function Home() {
     );
   }
 
-  if (!video) {
+  if (error || !videos || videos.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="max-w-md mx-auto text-center">
             <div className="bg-card rounded-xl p-8 shadow-sm">
-              <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield className="h-8 w-8 text-destructive" />
+              <div className="w-16 h-16 bg-muted/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BookOpen className="h-8 w-8 text-muted-foreground" />
               </div>
               <h2 className="text-xl font-semibold text-foreground mb-2">No Training Available</h2>
               <p className="text-muted-foreground">
@@ -104,39 +93,82 @@ export default function Home() {
       <Header />
       
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="max-w-4xl mx-auto">
-          {/* Video Section - Moved to Top */}
-          <div className="mb-12">
-            <div className="max-w-2xl mx-auto">
-              <VideoThumbnail video={video} onClick={scrollToEmailForm} />
-              
-              {/* Video Details */}
-              <div className="mt-6 text-center">
-                <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3" data-testid="text-video-title">
-                  {video.title}
-                </h2>
-                <p className="text-muted-foreground mb-4" data-testid="text-video-description">
-                  {video.description}
-                </p>
-              </div>
-            </div>
+        <div className="max-w-6xl mx-auto">
+          {/* Hero Section */}
+          <div className="text-center mb-12">
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+              Safety Training Library
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Choose from our comprehensive safety training modules. Each course provides secure access with progress tracking and completion certificates.
+            </p>
           </div>
 
-          {/* Email Access Form - Centered */}
-          <div className="max-w-md mx-auto" ref={emailFormRef}>
-            <EmailForm onEmailSent={handleEmailSent} video={video} />
+          {/* Video Grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {videos.map((video) => (
+              <VideoCard key={video.id} video={video} />
+            ))}
           </div>
         </div>
       </main>
 
       <Footer />
-
-      <EmailSentModal 
-        isOpen={showEmailModal}
-        onClose={() => setShowEmailModal(false)}
-        email={userEmail}
-      />
     </div>
+  );
+}
+
+function VideoCard({ video }: { video: Video }) {
+  return (
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+      <div className="aspect-video bg-muted relative overflow-hidden">
+        {video.thumbnailUrl ? (
+          <img 
+            src={video.thumbnailUrl} 
+            alt={video.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/30 flex items-center justify-center">
+            <Play className="h-12 w-12 text-primary/60" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+          <div className="bg-white/90 rounded-full p-3">
+            <Play className="h-6 w-6 text-gray-800" />
+          </div>
+        </div>
+      </div>
+      
+      <CardContent className="p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-2" data-testid={`text-video-title-${video.id}`}>
+          {video.title}
+        </h3>
+        
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-3" data-testid={`text-video-description-${video.id}`}>
+          {video.description}
+        </p>
+        
+        {/* Video Metadata */}
+        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+          <div className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            <span data-testid={`text-video-duration-${video.id}`}>{video.duration}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Tag className="h-3 w-3" />
+            <span data-testid={`text-video-category-${video.id}`}>{video.category}</span>
+          </div>
+        </div>
+        
+        {/* Register Button */}
+        <Link href={`/video-request?video=${video.id}`}>
+          <Button className="w-full" data-testid={`button-register-${video.id}`}>
+            Register for Training
+          </Button>
+        </Link>
+      </CardContent>
+    </Card>
   );
 }
 

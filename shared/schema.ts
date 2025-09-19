@@ -38,6 +38,7 @@ export const magicLinks = pgTable("magic_links", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   token: text("token").notNull().unique(),
   email: text("email").notNull(),
+  userName: text("user_name").notNull(),
   videoId: varchar("video_id").notNull().references(() => videos.id),
   expiresAt: timestamp("expires_at").notNull(),
   isUsed: boolean("is_used").notNull().default(false),
@@ -48,6 +49,7 @@ export const accessLogs = pgTable("access_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   magicLinkId: varchar("magic_link_id").notNull().references(() => magicLinks.id),
   email: text("email").notNull(),
+  userName: text("user_name").notNull(),
   videoId: varchar("video_id").notNull().references(() => videos.id),
   accessedAt: timestamp("accessed_at").notNull().default(sql`now()`),
   watchDuration: integer("watch_duration").default(0), // in seconds
@@ -110,6 +112,7 @@ export const insertAccessLogSchema = createInsertSchema(accessLogs).omit({
 });
 
 export const requestAccessSchema = z.object({
+  userName: z.string().min(1, "Please enter your name"),
   email: z.string().email("Please enter a valid email address"),
   videoId: z.string().optional(),
 });

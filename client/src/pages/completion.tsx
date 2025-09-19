@@ -9,10 +9,12 @@ import { useQuery } from "@tanstack/react-query";
 interface AccessLogData {
   id: string;
   email: string;
+  userName: string;
   videoId: string;
   accessedAt: string;
   watchDuration: number | null;
   completionPercentage: number | null;
+  companyTag: string | null;
   videoTitle: string | null;
   videoDuration: string | null;
   videoCategory: string | null;
@@ -31,13 +33,17 @@ function Completion() {
   });
 
   const videoName = accessLogData?.videoTitle || 'this training module';
-  const completionPercentage = accessLogData?.completionPercentage || 0;
   const watchDuration = accessLogData?.watchDuration || 0;
-  const accessedAt = accessLogData?.accessedAt ? new Date(accessLogData.accessedAt).toLocaleTimeString('en-US', { hour12: false }) : null;
+  const accessedAt = accessLogData?.accessedAt ? new Date(accessLogData.accessedAt).toLocaleDateString('en-US', { 
+    year: 'numeric',
+    month: 'long', 
+    day: 'numeric'
+  }) : null;
   const videoDuration = accessLogData?.videoDuration || 'N/A';
   const videoCategory = accessLogData?.videoCategory || 'N/A';
   const viewerEmail = accessLogData?.email || '';
-  const viewerName = viewerEmail ? viewerEmail.substring(0, viewerEmail.indexOf('@')) : 'Unknown';
+  const viewerName = accessLogData?.userName || 'Unknown';
+  const companyTag = accessLogData?.companyTag || 'N/A';
 
   const handleShare = async () => {
     setIsSharing(true);
@@ -173,16 +179,6 @@ function Completion() {
           <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Award className="w-4 h-4 text-green-600 dark:text-green-400" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Completion</span>
-              </div>
-              <span className="text-sm font-bold text-green-600 dark:text-green-400">
-                {completionPercentage}%
-              </span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
                 <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Watch Time</span>
               </div>
@@ -195,7 +191,7 @@ function Completion() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Completed</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Completed Date</span>
                 </div>
                 <span className="text-sm font-bold text-gray-600 dark:text-gray-400">
                   {accessedAt}
@@ -233,6 +229,16 @@ function Completion() {
               </div>
               <span className="text-sm font-bold text-gray-600 dark:text-gray-400" data-testid="text-viewer-email">
                 {viewerName}
+              </span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Tag className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Company</span>
+              </div>
+              <span className="text-sm font-bold text-gray-600 dark:text-gray-400" data-testid="text-company-tag">
+                {companyTag}
               </span>
             </div>
           </div>

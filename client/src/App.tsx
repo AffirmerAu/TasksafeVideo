@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AdminProvider } from "@/contexts/admin-context";
 import Home from "@/pages/home";
+import VideoRequest from "@/pages/video-request";
 import VideoPlayer from "@/pages/video-player";
 import Completion from "@/pages/completion";
 import AccessDenied from "@/pages/access-denied";
@@ -17,6 +18,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/home" component={Home} />
+      <Route path="/video-request" component={VideoRequest} />
       <Route path="/access" component={VideoPlayer} />
       <Route path="/completion/:accessId" component={Completion} />
       <Route path="/access-denied" component={AccessDenied} />

@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { toast } from "@/hooks/use-toast";
 
 const emailSchema = z.object({
+  userName: z.string().min(1, "Please enter your name"),
   email: z.string().email("Please enter a valid email address"),
 });
 
@@ -30,16 +31,17 @@ export default function EmailForm({ onEmailSent, video }: EmailFormProps) {
   const form = useForm<EmailFormData>({
     resolver: zodResolver(emailSchema),
     defaultValues: {
+      userName: "",
       email: "",
     },
   });
 
   const requestAccessMutation = useMutation({
-    mutationFn: async (email: string) => {
+    mutationFn: async (data: EmailFormData) => {
       const response = await fetch("/api/request-access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, videoId: video.id }),
+        body: JSON.stringify({ userName: data.userName, email: data.email, videoId: video.id }),
       });
       
       if (!response.ok) {
@@ -67,7 +69,7 @@ export default function EmailForm({ onEmailSent, video }: EmailFormProps) {
   });
 
   const onSubmit = (data: EmailFormData) => {
-    requestAccessMutation.mutate(data.email);
+    requestAccessMutation.mutate(data);
   };
 
   return (
@@ -84,6 +86,29 @@ export default function EmailForm({ onEmailSent, video }: EmailFormProps) {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" data-testid="form-email">
+          <FormField
+            control={form.control}
+            name="userName"
+            render={({ field }) => (
+              <FormItem>
+                <Label htmlFor="userName" className="text-sm font-medium text-foreground">
+                  Your Name
+                </Label>
+                <FormControl>
+                  <Input
+                    {...field}
+                    id="userName"
+                    type="text"
+                    placeholder="Enter your full name"
+                    className="w-full"
+                    data-testid="input-userName"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
           <FormField
             control={form.control}
             name="email"
